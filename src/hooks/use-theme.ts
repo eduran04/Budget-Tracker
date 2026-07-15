@@ -1,0 +1,44 @@
+import { useCallback, useEffect, useSyncExternalStore } from "react";
+
+export type Theme = "light" | "dark" | "system" | "girly-pink";
+
+function subscribe(cb: () => void) {
+  window.addEventListener("theme-change", cb);
+  return () => window.removeEventListener("theme-change", cb);
+}
+
+const getTheme = () => (localStorage.getItem("theme") ?? "system") as Theme;
+
+function apply(theme: Theme) {
+  const root = document.documentElement;
+  root.classList.remove("dark", "theme-girly-pink");
+  if (theme === "girly-pink") {
+    root.classList.add("theme-girly-pink");
+  } else if (
+    theme === "dark" ||
+    (theme === "system" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches)
+  ) {
+    root.classList.add("dark");
+  }
+}
+
+export function useTheme() {
+  const theme = useSyncExternalStore(subscribe, getTheme);
+
+  const setTheme = useCallback((next: Theme) => {
+    localStorage.setItem("theme", next);
+    apply(next);
+    window.dispatchEvent(new Event("theme-change"));
+  }, []);
+
+  // Follow OS changes while in system mode
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => getTheme() === "system" && apply("system");
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  return { theme, setTheme };
+}
