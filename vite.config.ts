@@ -4,6 +4,8 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  // Relative paths so the packaged Electron app can load assets from disk
+  base: "./",
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
