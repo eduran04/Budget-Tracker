@@ -143,12 +143,12 @@ describe("budgetStatuses", () => {
       "2026-07-01",
       "2026-07-31",
     );
-    expect(statuses[0].state).toBe("warning");
+    expect(statuses[0]?.state).toBe("warning");
   });
 
   it("sorts by highest ratio first", () => {
     const statuses = budgetStatuses(categories, txns, "2026-07-01", "2026-07-31");
-    expect(statuses[0].category.id).toBe("cat-2");
+    expect(statuses[0]?.category.id).toBe("cat-2");
   });
 
   it("skips categories without a monthly limit", () => {

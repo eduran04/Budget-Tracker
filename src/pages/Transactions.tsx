@@ -11,7 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import type { Transaction } from "@/types";
+import type { EntityId, Transaction } from "@/types";
 import {
   useAccounts,
   useCategories,
@@ -67,7 +67,17 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
 import { RecurringList } from "@/components/recurring/RecurringList";
 
-type SortKey = "date-desc" | "date-asc" | "amount-desc" | "amount-asc";
+const SORT_KEYS = [
+  "date-desc",
+  "date-asc",
+  "amount-desc",
+  "amount-asc",
+] as const;
+type SortKey = (typeof SORT_KEYS)[number];
+
+function isSortKey(value: string): value is SortKey {
+  return (SORT_KEYS as readonly string[]).includes(value);
+}
 
 const ALL = "__all__";
 
@@ -83,7 +93,7 @@ export default function Transactions() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [sort, setSort] = useState<SortKey>("date-desc");
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState<Set<EntityId>>(new Set());
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | undefined>();
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
@@ -154,7 +164,7 @@ export default function Transactions() {
     setSelected(checked ? new Set(filtered.map((t) => t.id)) : new Set());
   }
 
-  function toggleOne(id: string, checked: boolean) {
+  function toggleOne(id: EntityId, checked: boolean) {
     setSelected((prev) => {
       const next = new Set(prev);
       if (checked) next.add(id);
@@ -302,7 +312,12 @@ export default function Transactions() {
             aria-label="To date"
           />
         </div>
-        <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+        <Select
+          value={sort}
+          onValueChange={(v) => {
+            if (isSortKey(v)) setSort(v);
+          }}
+        >
           <SelectTrigger className="w-40">
             <ArrowDownUp className="size-3.5" />
             <SelectValue />

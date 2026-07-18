@@ -2,7 +2,11 @@ import type { Category } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { getCategoryIcon } from "./icons";
 
-export function CategoryBadge({ category }: { category?: Category | null }) {
+export function CategoryBadge({
+  category,
+}: {
+  category?: Category | null | undefined;
+}) {
   if (!category) {
     return (
       <Badge variant="outline" className="text-muted-foreground">

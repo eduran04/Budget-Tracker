@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import type { Account, Category, RecurringRule } from "@/types";
 import { recurringSchema, type RecurringFormValues } from "@/lib/schemas";
+import { asEntityId, asIsoDate } from "@/types";
 import { createRecurringRule, updateRecurringRule } from "@/lib/db";
 import {
   Sheet,
@@ -43,7 +44,7 @@ export function RecurringForm({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  rule?: RecurringRule;
+  rule?: RecurringRule | undefined;
   accounts: Account[];
   categories: Category[];
 }) {
@@ -91,7 +92,16 @@ export function RecurringForm({
   }, [open, rule]);
 
   async function onSubmit(values: RecurringFormValues) {
-    const payload = { ...values, amount: Number(values.amount) };
+    const payload = {
+      accountId: asEntityId(values.accountId),
+      categoryId: asEntityId(values.categoryId),
+      amount: Number(values.amount),
+      type: values.type,
+      description: values.description,
+      frequency: values.frequency,
+      nextDueDate: asIsoDate(values.nextDueDate),
+      autoGenerate: values.autoGenerate,
+    };
     if (rule) {
       await updateRecurringRule(rule.id, payload);
       toast.success("Recurring item updated");

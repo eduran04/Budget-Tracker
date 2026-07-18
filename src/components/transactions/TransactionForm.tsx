@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import type { Account, Category, Transaction } from "@/types";
+import { asEntityId, asIsoDate } from "@/types";
 import { transactionSchema, type TransactionFormValues } from "@/lib/schemas";
 import { createTransaction, updateTransaction } from "@/lib/db";
 import {
@@ -42,7 +43,7 @@ export function TransactionForm({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  transaction?: Transaction;
+  transaction?: Transaction | undefined;
   accounts: Account[];
   categories: Category[];
 }) {
@@ -92,11 +93,11 @@ export function TransactionForm({
       .map((t) => t.trim())
       .filter(Boolean);
     const payload = {
-      accountId: values.accountId,
-      categoryId: values.categoryId,
+      accountId: asEntityId(values.accountId),
+      categoryId: asEntityId(values.categoryId),
       type: values.type,
       amount: Number(values.amount),
-      date: values.date,
+      date: asIsoDate(values.date),
       description: values.description,
       ...(tags.length > 0 ? { tags } : {}),
     };

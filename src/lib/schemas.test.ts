@@ -153,4 +153,104 @@ describe("backupSchema", () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it("accepts a full entity round-trip fixture without casts", () => {
+    const fixture = {
+      version: 1 as const,
+      exportedAt: "2026-07-01T00:00:00.000Z",
+      accounts: [
+        {
+          id: "acc-1",
+          name: "Checking",
+          type: "checking",
+          color: "#3b82f6",
+          startingBalance: 1000,
+          archived: false,
+        },
+      ],
+      categories: [
+        {
+          id: "cat-1",
+          name: "Groceries",
+          icon: "shopping-cart",
+          color: "#10b981",
+          monthlyLimit: 500,
+        },
+      ],
+      transactions: [
+        {
+          id: "txn-1",
+          accountId: "acc-1",
+          categoryId: "cat-1",
+          type: "expense",
+          amount: 25,
+          date: "2026-07-01",
+          description: "Lunch",
+        },
+        {
+          id: "txn-2",
+          accountId: "acc-1",
+          categoryId: null,
+          type: "transfer",
+          amount: -100,
+          date: "2026-07-02",
+          description: "Transfer out",
+          transferPairId: "pair-1",
+        },
+      ],
+      recurringRules: [
+        {
+          id: "rule-1",
+          accountId: "acc-1",
+          categoryId: "cat-1",
+          amount: 1800,
+          type: "expense",
+          description: "Rent",
+          frequency: "monthly",
+          nextDueDate: "2026-08-01",
+          autoGenerate: true,
+        },
+      ],
+      goals: [
+        {
+          id: "goal-1",
+          name: "Emergency",
+          targetAmount: 10000,
+          currentAmount: 2000,
+          createdAt: "2026-01-01",
+          accountId: "acc-1",
+        },
+      ],
+    };
+    const result = backupSchema.safeParse(fixture);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.accounts[0]?.id).toBe("acc-1");
+      expect(result.data.transactions[1]?.type).toBe("transfer");
+      expect(result.data.goals[0]?.createdAt).toBe("2026-01-01");
+    }
+  });
+
+  it("rejects transfer rows missing transferPairId", () => {
+    const result = backupSchema.safeParse({
+      version: 1,
+      exportedAt: "2026-07-01T00:00:00.000Z",
+      accounts: [],
+      categories: [],
+      transactions: [
+        {
+          id: "txn-1",
+          accountId: "acc-1",
+          categoryId: null,
+          type: "transfer",
+          amount: -50,
+          date: "2026-07-01",
+          description: "Broken transfer",
+        },
+      ],
+      recurringRules: [],
+      goals: [],
+    });
+    expect(result.success).toBe(false);
+  });
 });

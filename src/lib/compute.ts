@@ -26,9 +26,18 @@ export function creditAmountOwed(balance: number): number {
  * Income adds, expense subtracts, transfer rows carry their own sign.
  */
 export function balanceEffect(t: Transaction): number {
-  if (t.type === "income") return t.amount;
-  if (t.type === "expense") return -t.amount;
-  return t.amount;
+  switch (t.type) {
+    case "income":
+      return t.amount;
+    case "expense":
+      return -t.amount;
+    case "transfer":
+      return t.amount;
+    default: {
+      const _exhaustive: never = t;
+      throw new Error(`Unhandled transaction type: ${JSON.stringify(_exhaustive)}`);
+    }
+  }
 }
 
 export function accountBalance(

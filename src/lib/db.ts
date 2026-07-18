@@ -4,11 +4,15 @@ import type {
   Account,
   AppBackup,
   Category,
+  EntityId,
   Goal,
+  IsoDate,
   RecurringRule,
   Transaction,
 } from "@/types";
+import { asEntityId, asIsoDate } from "@/types";
 import { accountBalance } from "./compute";
+import { err, ok, type Result } from "./result";
 import { seedIfEmpty } from "./seed";
 
 class BudgetDB extends Dexie {
@@ -33,12 +37,14 @@ class BudgetDB extends Dexie {
 
 export const db = new BudgetDB();
 
-export const newId = () => crypto.randomUUID();
+export const newId = (): EntityId => asEntityId(crypto.randomUUID());
 
-/** Runs once on app start: seeds demo data, then materializes due recurring rules. */
+/**
+ * Runs once on app start: seeds demo data. Materializing due recurring rules
+ * is deferred until after first paint (see App.tsx) to keep startup fast.
+ */
 export async function initDb() {
   await seedIfEmpty(db);
-  await processDueRecurringRules();
 }
 
 // ---------- Accounts ----------
@@ -46,10 +52,10 @@ export async function initDb() {
 export const createAccount = (account: Omit<Account, "id">) =>
   db.accounts.add({ ...account, id: newId() });
 
-export const updateAccount = (id: string, changes: Partial<Account>) =>
+export const updateAccount = (id: EntityId, changes: Partial<Account>) =>
   db.accounts.update(id, changes);
 
-export const setAccountArchived = (id: string, archived: boolean) =>
+export const setAccountArchived = (id: EntityId, archived: boolean) =>
   db.accounts.update(id, { archived });
 
 /**
@@ -67,10 +73,10 @@ export const overrideAccountBalance = (
   });
 };
 
-export const clearBalanceOverride = (id: string) =>
+export const clearBalanceOverride = (id: EntityId) =>
   updateAccount(id, { balanceAdjustment: 0 });
 
-export const deleteAccount = async (id: string) => {
+export const deleteAccount = async (id: EntityId) => {
   await db.transaction("rw", db.transactions, db.accounts, async () => {
     await db.transactions.where("accountId").equals(id).delete();
     await db.accounts.delete(id);
@@ -82,10 +88,10 @@ export const deleteAccount = async (id: string) => {
 export const createCategory = (category: Omit<Category, "id">) =>
   db.categories.add({ ...category, id: newId() });
 
-export const updateCategory = (id: string, changes: Partial<Category>) =>
+export const updateCategory = (id: EntityId, changes: Partial<Category>) =>
   db.categories.update(id, changes);
 
-export const deleteCategory = async (id: string) => {
+export const deleteCategory = async (id: EntityId) => {
   await db.transaction("rw", db.transactions, db.categories, async () => {
     await db.transactions
       .where("categoryId")
@@ -98,17 +104,21 @@ export const deleteCategory = async (id: string) => {
 // ---------- Transactions ----------
 
 export const createTransaction = (txn: Omit<Transaction, "id">) =>
-  db.transactions.add({ ...txn, id: newId() });
+  db.transactions.add({ ...txn, id: newId() } as Transaction);
 
-export const updateTransaction = (id: string, changes: Partial<Transaction>) =>
-  db.transactions.update(id, changes);
+export const updateTransaction = (
+  id: EntityId,
+  changes: Partial<Transaction>,
+) => db.transactions.update(id, changes);
 
-export const deleteTransactions = async (ids: string[]) => {
+export const deleteTransactions = async (ids: EntityId[]) => {
   // Deleting one side of a transfer removes its pair too.
   const rows = await db.transactions.bulkGet(ids);
   const pairIds = rows
-    .filter((r): r is Transaction => !!r?.transferPairId)
-    .map((r) => r.transferPairId!);
+    .filter((r): r is Extract<Transaction, { type: "transfer" }> =>
+      r?.type === "transfer",
+    )
+    .map((r) => r.transferPairId);
   const extra =
     pairIds.length > 0
       ? (await db.transactions.where("transferPairId").anyOf(pairIds).toArray())
@@ -118,27 +128,38 @@ export const deleteTransactions = async (ids: string[]) => {
   await db.transactions.bulkDelete([...ids, ...extra]);
 };
 
-export const bulkSetCategory = (ids: string[], categoryId: string) =>
+export const bulkSetCategory = (ids: EntityId[], categoryId: EntityId) =>
   db.transactions.where("id").anyOf(ids).modify({ categoryId });
 
 export async function createTransfer(input: {
-  fromAccountId: string;
-  toAccountId: string;
+  fromAccountId: EntityId;
+  toAccountId: EntityId;
   amount: number;
-  date: string;
+  date: IsoDate | string;
   description: string;
 }) {
   const pairId = newId();
+  const date = asIsoDate(input.date);
   const base = {
     categoryId: null,
     type: "transfer" as const,
-    date: input.date,
+    date,
     description: input.description,
     transferPairId: pairId,
   };
   await db.transactions.bulkAdd([
-    { ...base, id: newId(), accountId: input.fromAccountId, amount: -input.amount },
-    { ...base, id: newId(), accountId: input.toAccountId, amount: input.amount },
+    {
+      ...base,
+      id: newId(),
+      accountId: input.fromAccountId,
+      amount: -input.amount,
+    },
+    {
+      ...base,
+      id: newId(),
+      accountId: input.toAccountId,
+      amount: input.amount,
+    },
   ]);
 }
 
@@ -148,13 +169,17 @@ export const createRecurringRule = (rule: Omit<RecurringRule, "id">) =>
   db.recurringRules.add({ ...rule, id: newId() });
 
 export const updateRecurringRule = (
-  id: string,
+  id: EntityId,
   changes: Partial<RecurringRule>,
 ) => db.recurringRules.update(id, changes);
 
-export const deleteRecurringRule = (id: string) => db.recurringRules.delete(id);
+export const deleteRecurringRule = (id: EntityId) =>
+  db.recurringRules.delete(id);
 
-function advance(date: string, frequency: RecurringRule["frequency"]): string {
+function advance(
+  date: IsoDate,
+  frequency: RecurringRule["frequency"],
+): IsoDate {
   const d = new Date(`${date}T00:00:00`);
   const next =
     frequency === "weekly"
@@ -162,11 +187,14 @@ function advance(date: string, frequency: RecurringRule["frequency"]): string {
       : frequency === "monthly"
         ? addMonths(d, 1)
         : addYears(d, 1);
-  return format(next, "yyyy-MM-dd");
+  return asIsoDate(format(next, "yyyy-MM-dd"));
 }
 
 /** Creates the concrete transaction for a due rule and advances its next due date. */
-export async function generateFromRule(rule: RecurringRule, date?: string) {
+export async function generateFromRule(
+  rule: RecurringRule,
+  date?: IsoDate | string,
+) {
   await db.transaction("rw", db.transactions, db.recurringRules, async () => {
     await db.transactions.add({
       id: newId(),
@@ -174,7 +202,7 @@ export async function generateFromRule(rule: RecurringRule, date?: string) {
       categoryId: rule.categoryId,
       type: rule.type,
       amount: rule.amount,
-      date: date ?? rule.nextDueDate,
+      date: asIsoDate(date ?? rule.nextDueDate),
       description: rule.description,
       recurringId: rule.id,
     });
@@ -209,10 +237,10 @@ export async function processDueRecurringRules() {
 export const createGoal = (goal: Omit<Goal, "id">) =>
   db.goals.add({ ...goal, id: newId() });
 
-export const updateGoal = (id: string, changes: Partial<Goal>) =>
+export const updateGoal = (id: EntityId, changes: Partial<Goal>) =>
   db.goals.update(id, changes);
 
-export const deleteGoal = (id: string) => db.goals.delete(id);
+export const deleteGoal = (id: EntityId) => db.goals.delete(id);
 
 /**
  * Records a contribution. Always increments the goal's saved amount; when both
@@ -221,7 +249,7 @@ export const deleteGoal = (id: string) => db.goals.delete(id);
 export async function contributeToGoal(
   goal: Goal,
   amount: number,
-  fromAccountId?: string,
+  fromAccountId?: EntityId,
 ) {
   await db.transaction("rw", db.goals, db.transactions, async () => {
     await db.goals.update(goal.id, {
@@ -261,27 +289,40 @@ export async function exportAll(): Promise<AppBackup> {
   };
 }
 
-export async function importAll(backup: AppBackup) {
-  await db.transaction(
-    "rw",
-    [db.accounts, db.categories, db.transactions, db.recurringRules, db.goals],
-    async () => {
-      await Promise.all([
-        db.accounts.clear(),
-        db.categories.clear(),
-        db.transactions.clear(),
-        db.recurringRules.clear(),
-        db.goals.clear(),
-      ]);
-      await Promise.all([
-        db.accounts.bulkAdd(backup.accounts),
-        db.categories.bulkAdd(backup.categories),
-        db.transactions.bulkAdd(backup.transactions),
-        db.recurringRules.bulkAdd(backup.recurringRules),
-        db.goals.bulkAdd(backup.goals),
-      ]);
-    },
-  );
+export async function importAll(
+  backup: AppBackup,
+): Promise<Result<void, string>> {
+  try {
+    await db.transaction(
+      "rw",
+      [
+        db.accounts,
+        db.categories,
+        db.transactions,
+        db.recurringRules,
+        db.goals,
+      ],
+      async () => {
+        await Promise.all([
+          db.accounts.clear(),
+          db.categories.clear(),
+          db.transactions.clear(),
+          db.recurringRules.clear(),
+          db.goals.clear(),
+        ]);
+        await Promise.all([
+          db.accounts.bulkAdd(backup.accounts),
+          db.categories.bulkAdd(backup.categories),
+          db.transactions.bulkAdd(backup.transactions),
+          db.recurringRules.bulkAdd(backup.recurringRules),
+          db.goals.bulkAdd(backup.goals),
+        ]);
+      },
+    );
+    return ok(undefined);
+  } catch (e) {
+    return err(e instanceof Error ? e.message : "Import failed");
+  }
 }
 
 export async function clearAllData() {

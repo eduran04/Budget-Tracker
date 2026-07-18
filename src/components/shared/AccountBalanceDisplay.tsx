@@ -16,8 +16,8 @@ export function AccountBalanceDisplay({
 }: {
   account: Account;
   balance: number;
-  className?: string;
-  creditMode?: CreditDisplayMode;
+  className?: string | undefined;
+  creditMode?: CreditDisplayMode | undefined;
 }) {
   if (account.type !== "credit") {
     return (

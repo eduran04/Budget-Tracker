@@ -26,6 +26,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   CATEGORY_COLORS,
   CATEGORY_ICONS,
+  DEFAULT_CATEGORY_COLOR,
 } from "@/components/shared/icons";
 import { cn } from "@/lib/utils";
 
@@ -36,14 +37,14 @@ export function CategoryForm({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  category?: Category;
+  category?: Category | undefined;
 }) {
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
       name: "",
       icon: "shopping-cart",
-      color: CATEGORY_COLORS[0],
+      color: DEFAULT_CATEGORY_COLOR,
       monthlyLimit: "",
     },
   });
@@ -64,7 +65,7 @@ export function CategoryForm({
           : {
               name: "",
               icon: "shopping-cart",
-              color: CATEGORY_COLORS[0],
+              color: DEFAULT_CATEGORY_COLOR,
               monthlyLimit: "",
             },
       );
@@ -77,7 +78,7 @@ export function CategoryForm({
       name: values.name,
       icon: values.icon,
       color: values.color,
-      monthlyLimit: limit,
+      ...(limit != null ? { monthlyLimit: limit } : {}),
     };
     if (category) {
       await updateCategory(category.id, payload);

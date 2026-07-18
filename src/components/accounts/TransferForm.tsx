@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import type { Account } from "@/types";
 import { transferSchema, type TransferFormValues } from "@/lib/schemas";
+import { asEntityId } from "@/types";
 import { createTransfer } from "@/lib/db";
 import {
   Sheet,
@@ -65,7 +66,13 @@ export function TransferForm({
   }, [open]);
 
   async function onSubmit(values: TransferFormValues) {
-    await createTransfer({ ...values, amount: Number(values.amount) });
+    await createTransfer({
+      fromAccountId: asEntityId(values.fromAccountId),
+      toAccountId: asEntityId(values.toAccountId),
+      amount: Number(values.amount),
+      date: values.date,
+      description: values.description,
+    });
     toast.success("Transfer recorded");
     onOpenChange(false);
   }

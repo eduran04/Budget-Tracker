@@ -58,7 +58,7 @@ describe("csvToTransactions", () => {
     const csv = `date,description,amount,type,category,account
 2026-07-01,Misc,10,expense,,Unknown Account`;
     const { valid } = csvToTransactions(csv, accounts, categories);
-    expect(valid[0].accountId).toBe("acc-1");
+    expect(valid[0]?.accountId).toBe("acc-1");
   });
 
   it("reports errors for invalid dates and zero amounts", () => {
@@ -71,7 +71,7 @@ bad-date,Bad,0,expense,,Checking`;
 
   it("returns error when file has no data rows", () => {
     const { errors } = csvToTransactions("date,amount", accounts, categories);
-    expect(errors[0].message).toMatch(/no data rows/i);
+    expect(errors[0]?.message).toMatch(/no data rows/i);
   });
 
   it("round-trips with export", () => {
@@ -87,7 +87,7 @@ bad-date,Bad,0,expense,,Checking`;
     const csv = transactionsToCsv(txns, accounts, categories);
     const { valid, errors } = csvToTransactions(csv, accounts, categories);
     expect(errors).toHaveLength(0);
-    expect(valid[0].amount).toBe(5.5);
-    expect(valid[0].description).toBe("Coffee");
+    expect(valid[0]?.amount).toBe(5.5);
+    expect(valid[0]?.description).toBe("Coffee");
   });
 });

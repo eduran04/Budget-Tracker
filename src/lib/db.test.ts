@@ -17,6 +17,7 @@ import {
 } from "./db";
 import { account, category } from "@/test/fixtures";
 import { clearDb } from "@/test/helpers";
+import { asEntityId, asIsoDate } from "@/types";
 
 describe("db repository", () => {
   beforeEach(async () => {
@@ -29,18 +30,18 @@ describe("db repository", () => {
       await createAccount(data);
       const rows = await db.accounts.toArray();
       expect(rows).toHaveLength(1);
-      expect(rows[0].name).toBe("Checking");
+      expect(rows[0]?.name).toBe("Checking");
     });
 
     it("deletes account and its transactions", async () => {
-      const id = crypto.randomUUID();
+      const id = asEntityId(crypto.randomUUID());
       await db.accounts.add(account({ id }));
       await createTransaction({
         accountId: id,
-        categoryId: "cat-1",
+        categoryId: asEntityId("cat-1"),
         type: "expense",
         amount: 50,
-        date: "2026-07-01",
+        date: asIsoDate("2026-07-01"),
         description: "Test",
       });
       await deleteAccount(id);
@@ -56,17 +57,19 @@ describe("db repository", () => {
         account({ id: "to", name: "Savings" }),
       ]);
       await createTransfer({
-        fromAccountId: "from",
-        toAccountId: "to",
+        fromAccountId: asEntityId("from"),
+        toAccountId: asEntityId("to"),
         amount: 200,
         date: "2026-07-01",
         description: "Move to savings",
       });
       const txns = await db.transactions.toArray();
       expect(txns).toHaveLength(2);
-      expect(txns[0].transferPairId).toBe(txns[1].transferPairId);
-      expect(txns[0].type).toBe("transfer");
-      expect(txns[0].categoryId).toBeNull();
+      expect(txns[0]?.type === "transfer" && txns[0].transferPairId).toBe(
+        txns[1]?.type === "transfer" ? txns[1].transferPairId : undefined,
+      );
+      expect(txns[0]?.type).toBe("transfer");
+      expect(txns[0]?.categoryId).toBeNull();
       const amounts = txns.map((t) => t.amount).sort((a, b) => a - b);
       expect(amounts).toEqual([-200, 200]);
     });
@@ -77,14 +80,15 @@ describe("db repository", () => {
         account({ id: "to" }),
       ]);
       await createTransfer({
-        fromAccountId: "from",
-        toAccountId: "to",
+        fromAccountId: asEntityId("from"),
+        toAccountId: asEntityId("to"),
         amount: 100,
         date: "2026-07-01",
         description: "Transfer",
       });
       const [first] = await db.transactions.toArray();
-      await deleteTransactions([first.id]);
+      expect(first).toBeDefined();
+      await deleteTransactions([first!.id]);
       expect(await db.transactions.count()).toBe(0);
     });
   });
@@ -93,16 +97,16 @@ describe("db repository", () => {
     it("generates a transaction and advances next due date", async () => {
       await db.accounts.add(account({ id: "acc-1" }));
       await db.categories.add(category({ id: "cat-1" }));
-      const ruleId = crypto.randomUUID();
+      const ruleId = asEntityId(crypto.randomUUID());
       await db.recurringRules.add({
         id: ruleId,
-        accountId: "acc-1",
-        categoryId: "cat-1",
+        accountId: asEntityId("acc-1"),
+        categoryId: asEntityId("cat-1"),
         amount: 1800,
         type: "expense",
         description: "Rent",
         frequency: "monthly",
-        nextDueDate: "2026-06-01",
+        nextDueDate: asIsoDate("2026-06-01"),
         autoGenerate: false,
       });
       const rule = (await db.recurringRules.get(ruleId))!;
@@ -116,13 +120,13 @@ describe("db repository", () => {
       await db.accounts.add(account({ id: "acc-1" }));
       await db.categories.add(category({ id: "cat-1" }));
       await createRecurringRule({
-        accountId: "acc-1",
-        categoryId: "cat-1",
+        accountId: asEntityId("acc-1"),
+        categoryId: asEntityId("cat-1"),
         amount: 15.99,
         type: "expense",
         description: "Netflix",
         frequency: "monthly",
-        nextDueDate: format(subMonths(new Date(), 1), "yyyy-MM-dd"),
+        nextDueDate: asIsoDate(format(subMonths(new Date(), 1), "yyyy-MM-dd")),
         autoGenerate: true,
       });
       const count = await processDueRecurringRules();
@@ -137,17 +141,17 @@ describe("db repository", () => {
         account({ id: "savings" }),
         account({ id: "checking" }),
       ]);
-      const goalId = crypto.randomUUID();
+      const goalId = asEntityId(crypto.randomUUID());
       await db.goals.add({
         id: goalId,
         name: "Vacation",
         targetAmount: 3000,
         currentAmount: 500,
-        accountId: "savings",
-        createdAt: "2026-01-01",
+        accountId: asEntityId("savings"),
+        createdAt: asIsoDate("2026-01-01"),
       });
       const goal = (await db.goals.get(goalId))!;
-      await contributeToGoal(goal, 200, "checking");
+      await contributeToGoal(goal, 200, asEntityId("checking"));
       const updated = await db.goals.get(goalId);
       expect(updated!.currentAmount).toBe(700);
       expect(await db.transactions.count()).toBe(2);
@@ -159,30 +163,30 @@ describe("db repository", () => {
       await db.accounts.add(account({ id: "acc-1" }));
       await db.categories.add(category({ id: "cat-1" }));
       await createTransaction({
-        accountId: "acc-1",
-        categoryId: "cat-1",
+        accountId: asEntityId("acc-1"),
+        categoryId: asEntityId("cat-1"),
         type: "expense",
         amount: 25,
-        date: "2026-07-01",
+        date: asIsoDate("2026-07-01"),
         description: "Coffee",
       });
       await createRecurringRule({
-        accountId: "acc-1",
-        categoryId: "cat-1",
+        accountId: asEntityId("acc-1"),
+        categoryId: asEntityId("cat-1"),
         amount: 1800,
         type: "expense",
         description: "Rent",
         frequency: "monthly",
-        nextDueDate: "2099-01-01",
+        nextDueDate: asIsoDate("2099-01-01"),
         autoGenerate: false,
       });
       await db.goals.add({
-        id: crypto.randomUUID(),
+        id: asEntityId(crypto.randomUUID()),
         name: "Vacation",
         targetAmount: 3000,
         currentAmount: 500,
-        accountId: "acc-1",
-        createdAt: "2026-01-01",
+        accountId: asEntityId("acc-1"),
+        createdAt: asIsoDate("2026-01-01"),
       });
 
       const backup = await exportAll();
@@ -190,7 +194,8 @@ describe("db repository", () => {
       expect(await db.accounts.count()).toBe(0);
       expect(await db.transactions.count()).toBe(0);
 
-      await importAll(backup);
+      const result = await importAll(backup);
+      expect(result.success).toBe(true);
       expect(await db.accounts.count()).toBe(1);
       expect(await db.categories.count()).toBe(1);
       expect(await db.transactions.count()).toBe(1);

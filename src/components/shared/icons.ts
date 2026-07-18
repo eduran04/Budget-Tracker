@@ -70,9 +70,12 @@ export function getCategoryIcon(name: string): LucideIcon {
   return CATEGORY_ICONS[name] ?? CircleEllipsis;
 }
 
+export const DEFAULT_CATEGORY_COLOR = "#10b981";
+export const DEFAULT_ACCOUNT_COLOR = "#3b82f6";
+
 export const CATEGORY_COLORS = [
-  "#10b981",
-  "#3b82f6",
+  DEFAULT_CATEGORY_COLOR,
+  DEFAULT_ACCOUNT_COLOR,
   "#eab308",
   "#06b6d4",
   "#f43f5e",
@@ -83,4 +86,4 @@ export const CATEGORY_COLORS = [
   "#737373",
   "#0ea5e9",
   "#a855f7",
-];
+] as const;

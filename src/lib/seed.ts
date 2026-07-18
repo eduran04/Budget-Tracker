@@ -4,10 +4,12 @@ import type { Table } from "dexie";
 import type {
   Account,
   Category,
+  EntityId,
   Goal,
   RecurringRule,
   Transaction,
 } from "@/types";
+import { asEntityId, asIsoDate } from "@/types";
 
 type SeedDB = Dexie & {
   accounts: Table<Account, string>;
@@ -17,7 +19,7 @@ type SeedDB = Dexie & {
   goals: Table<Goal, string>;
 };
 
-const id = () => crypto.randomUUID();
+const id = () => asEntityId(crypto.randomUUID());
 
 export async function seedIfEmpty(db: SeedDB) {
   const seeded = localStorage.getItem("seeded");
@@ -54,7 +56,10 @@ export async function seedIfEmpty(db: SeedDB) {
     icon: string,
     color: string,
     monthlyLimit?: number,
-  ): Category => ({ id: id(), name, icon, color, monthlyLimit });
+  ): Category =>
+    monthlyLimit === undefined
+      ? { id: id(), name, icon, color }
+      : { id: id(), name, icon, color, monthlyLimit };
 
   const groceries = cat("Groceries", "shopping-cart", "#10b981", 600);
   const rent = cat("Rent", "home", "#3b82f6", 1800);
@@ -86,15 +91,14 @@ export async function seedIfEmpty(db: SeedDB) {
   const t = (
     monthsAgo: number,
     day: number,
-    accountId: string,
-    categoryId: string | null,
-    type: Transaction["type"],
+    accountId: EntityId,
+    categoryId: EntityId | null,
+    type: "income" | "expense",
     amount: number,
     description: string,
   ) => {
-    const date = format(
-      setDate(subMonths(now, monthsAgo), day),
-      "yyyy-MM-dd",
+    const date = asIsoDate(
+      format(setDate(subMonths(now, monthsAgo), day), "yyyy-MM-dd"),
     );
     txns.push({
       id: id(),
@@ -134,7 +138,9 @@ export async function seedIfEmpty(db: SeedDB) {
       type: "income",
       description: "Monthly salary",
       frequency: "monthly",
-      nextDueDate: format(setDate(subMonths(now, -1), 1), "yyyy-MM-dd"),
+      nextDueDate: asIsoDate(
+        format(setDate(subMonths(now, -1), 1), "yyyy-MM-dd"),
+      ),
       autoGenerate: false,
     },
     {
@@ -145,7 +151,9 @@ export async function seedIfEmpty(db: SeedDB) {
       type: "expense",
       description: "Rent payment",
       frequency: "monthly",
-      nextDueDate: format(setDate(subMonths(now, -1), 2), "yyyy-MM-dd"),
+      nextDueDate: asIsoDate(
+        format(setDate(subMonths(now, -1), 2), "yyyy-MM-dd"),
+      ),
       autoGenerate: false,
     },
     {
@@ -156,7 +164,9 @@ export async function seedIfEmpty(db: SeedDB) {
       type: "expense",
       description: "Netflix",
       frequency: "monthly",
-      nextDueDate: format(setDate(subMonths(now, -1), 18), "yyyy-MM-dd"),
+      nextDueDate: asIsoDate(
+        format(setDate(subMonths(now, -1), 18), "yyyy-MM-dd"),
+      ),
       autoGenerate: false,
     },
   ];
@@ -168,16 +178,16 @@ export async function seedIfEmpty(db: SeedDB) {
       targetAmount: 10000,
       currentAmount: 6200,
       accountId: savings.id,
-      createdAt: format(subMonths(now, 5), "yyyy-MM-dd"),
+      createdAt: asIsoDate(format(subMonths(now, 5), "yyyy-MM-dd")),
     },
     {
       id: id(),
       name: "Vacation",
       targetAmount: 3000,
       currentAmount: 850,
-      deadline: format(subMonths(now, -6), "yyyy-MM-dd"),
+      deadline: asIsoDate(format(subMonths(now, -6), "yyyy-MM-dd")),
       accountId: savings.id,
-      createdAt: format(subMonths(now, 2), "yyyy-MM-dd"),
+      createdAt: asIsoDate(format(subMonths(now, 2), "yyyy-MM-dd")),
     },
   ];
 

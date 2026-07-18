@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "typescript-best-practices": {
+      "source": "ofershap/typescript-best-practices",
+      "sourceType": "github",
+      "skillPath": "skills/typescript-best-practices/SKILL.md",
+      "computedHash": "37cecd0527773eac6b35ab4e24570b7c7b67afee0d9160401bdbd84bb1c16324"
+    }
+  }
+}
