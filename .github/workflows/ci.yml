@@ -2,7 +2,6 @@ name: CI
 
 on:
   push:
-  pull_request:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -15,7 +14,7 @@ jobs:
   lint-and-test:
     name: Lint and Test
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -35,3 +34,9 @@ jobs:
 
       - name: Test
         run: npm test
+
+      - name: Startup budget (under 10s)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          xvfb-run -a npm run check:startup

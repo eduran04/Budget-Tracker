@@ -94,3 +94,5 @@ chunking. Measured on the packaged portable build
 - `src/lib/startup.test.ts` guards `initDb` timing and ensures recurring-rule
   processing stays out of the blocking startup path.
 - `npm run electron:profile` reproduces the timing table above.
+- `npm run check:startup` (also in CI) builds and launches Electron, then fails
+  if wall-clock time to `firstInteractive` exceeds 10 seconds.

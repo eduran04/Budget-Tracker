@@ -12,6 +12,7 @@
     "build": "tsc -b && vite build",
     "build:analyze": "cross-env ANALYZE=1 vite build",
     "check:bundle": "node scripts/check-bundle-size.mjs",
+    "check:startup": "npm run build && cross-env STARTUP_PROFILE=1 STARTUP_PROFILE_EXIT=1 STARTUP_BUDGET_MS=10000 electron .",
     "preview": "vite preview",
     "lint": "eslint src",
     "typecheck": "tsc -b",

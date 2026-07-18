@@ -54,11 +54,13 @@ All persistence goes through `src/lib/db.ts`, so the storage backend could be sw
 | `npm run typecheck` | Run TypeScript (`tsc -b`) |
 | `npm test` | Run the Vitest suite once |
 | `npm run test:watch` | Run tests in watch mode |
-| `npm run ci` | Lint + typecheck + tests (local pre-push / matches GitHub Actions) |
+| `npm run ci` | Lint + typecheck + tests (local pre-push) |
+| `npm run check:startup` | Build + launch Electron; fail if interactive after 10s |
+| `npm run electron:profile` | Build + launch Electron with startup timing logs |
 
 ## Continuous integration
 
-GitHub Actions runs `npm run ci` on every branch push and pull request (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)). Setup notes for required status checks on `main` are in [`docs/ci.md`](docs/ci.md).
+GitHub Actions runs lint, typecheck, tests, and the startup budget check on every branch push (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)). Setup notes for required status checks on `main` are in [`docs/ci.md`](docs/ci.md).
 
 ## Testing
 
