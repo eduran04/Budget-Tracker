@@ -46,5 +46,21 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.test.ts"],
     globals: false,
+    coverage: {
+      provider: "v8",
+      include: ["src/lib/**/*.ts"],
+      exclude: [
+        "src/lib/**/*.test.ts",
+        "src/lib/seed.ts",
+        "src/lib/startup-marks.ts",
+        "src/lib/utils.ts",
+      ],
+      thresholds: {
+        lines: 80,
+        statements: 80,
+        functions: 80,
+        branches: 80,
+      },
+    },
   },
 });

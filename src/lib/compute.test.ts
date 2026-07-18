@@ -3,6 +3,8 @@ import {
   accountBalance,
   balanceEffect,
   budgetStatuses,
+  creditAmountOwed,
+  effectiveStartingBalance,
   spentByCategory,
   totalsForRange,
 } from "./compute";
@@ -20,6 +22,30 @@ describe("balanceEffect", () => {
   it("returns signed amount for transfer rows", () => {
     expect(balanceEffect(transaction({ type: "transfer", amount: -200 }))).toBe(-200);
     expect(balanceEffect(transaction({ type: "transfer", amount: 200 }))).toBe(200);
+  });
+});
+
+describe("effectiveStartingBalance", () => {
+  it("negates credit account starting balance", () => {
+    expect(
+      effectiveStartingBalance(account({ type: "credit", startingBalance: 1000 })),
+    ).toBe(-1000);
+  });
+
+  it("leaves non-credit starting balance unchanged", () => {
+    expect(
+      effectiveStartingBalance(account({ type: "checking", startingBalance: 500 })),
+    ).toBe(500);
+  });
+});
+
+describe("creditAmountOwed", () => {
+  it("returns positive owed from negative balance", () => {
+    expect(creditAmountOwed(-500)).toBe(500);
+  });
+
+  it("returns zero when balance is not a liability", () => {
+    expect(creditAmountOwed(100)).toBe(0);
   });
 });
 

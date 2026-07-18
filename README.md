@@ -53,6 +53,7 @@ All persistence goes through `src/lib/db.ts`, so the storage backend could be sw
 | `npm run lint` | Run ESLint on `src/` |
 | `npm run typecheck` | Run TypeScript (`tsc -b`) |
 | `npm test` | Run the Vitest suite once |
+| `npm run test:coverage` | Run tests with 80% coverage gate on `src/lib/` |
 | `npm run test:watch` | Run tests in watch mode |
 | `npm run ci` | Lint + typecheck + tests (local pre-push) |
 | `npm run check:startup` | Build + launch Electron; fail if interactive after 10s |

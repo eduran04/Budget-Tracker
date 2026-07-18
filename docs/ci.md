@@ -5,7 +5,7 @@ Every push runs the **CI** workflow (`.github/workflows/ci.yml`):
 1. Install dependencies (`npm ci`, with npm cache)
 2. Lint (`npm run lint` — ESLint)
 3. Typecheck (`npm run typecheck` — `tsc -b`)
-4. Test (`npm test` — Vitest)
+4. Test with **80% code coverage** on `src/lib/` (`npm run test:coverage` — Vitest + v8)
 5. Startup budget — production build + Electron launch; fails if wall-clock time to `firstInteractive` exceeds **10 seconds** (`npm run check:startup`, via `xvfb-run` on Linux). On CI only, the Chromium sandbox is disabled (`ELECTRON_DISABLE_SANDBOX=1`) because GitHub Actions runners cannot configure the SUID sandbox helper; local `npm run check:startup` keeps the sandbox enabled.
 
 The job name shown in GitHub status checks is **Lint and Test**.
