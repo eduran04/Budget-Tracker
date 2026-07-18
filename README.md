@@ -50,8 +50,15 @@ All persistence goes through `src/lib/db.ts`, so the storage backend could be sw
 | `npm run dev` | Start the dev server |
 | `npm run build` | Type-check and build for production |
 | `npm run preview` | Preview the production build |
+| `npm run lint` | Run ESLint on `src/` |
+| `npm run typecheck` | Run TypeScript (`tsc -b`) |
 | `npm test` | Run the Vitest suite once |
 | `npm run test:watch` | Run tests in watch mode |
+| `npm run ci` | Lint + typecheck + tests (local pre-push / matches GitHub Actions) |
+
+## Continuous integration
+
+GitHub Actions runs `npm run ci` on every branch push and pull request (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)). Setup notes for required status checks on `main` are in [`docs/ci.md`](docs/ci.md).
 
 ## Testing
 

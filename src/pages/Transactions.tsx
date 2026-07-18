@@ -216,7 +216,7 @@ export default function Transactions() {
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];
-                if (f) importCsv(f);
+                if (f) void importCsv(f);
                 e.target.value = "";
               }}
             />

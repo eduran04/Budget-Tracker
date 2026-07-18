@@ -153,7 +153,7 @@ export default function Settings() {
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];
-                if (f) onImportFile(f);
+                if (f) void onImportFile(f);
                 e.target.value = "";
               }}
             />

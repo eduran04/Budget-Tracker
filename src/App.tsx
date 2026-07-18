@@ -23,7 +23,7 @@ export default function App() {
     // The inline splash from index.html has done its job once React commits.
     document.getElementById("boot-splash")?.remove();
     markStartup("initDbStart");
-    initDb().finally(() => {
+    void initDb().finally(() => {
       markStartup("initDbEnd");
       setReady(true);
       // Materialize overdue recurring transactions after first paint; live
