@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowDownRight,
@@ -22,6 +22,7 @@ import {
   totalsForRange,
 } from "@/lib/compute";
 import { formatDisplayDate, monthRange } from "@/lib/dates";
+import { markStartup } from "@/lib/startup-marks";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,6 +51,10 @@ export default function Dashboard() {
 
   const loading = !accounts || !categories || !transactions || !rules;
   const [from, to] = monthRange(0);
+
+  useEffect(() => {
+    if (!loading) markStartup("firstInteractive");
+  }, [loading]);
 
   const totalBalance = useMemo(
     () =>

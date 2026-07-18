@@ -3,3 +3,5 @@ dist
 release
 *.local
 .DS_Store
+stats.html
+coverage

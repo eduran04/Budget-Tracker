@@ -1,8 +1,12 @@
 import { z } from "zod";
+import { asEntityId, asIsoDate } from "@/types";
 
 const isoDate = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Use a valid date");
+
+const entityId = z.string().min(1).transform(asEntityId);
+const isoDateBranded = isoDate.transform(asIsoDate);
 
 /** Form inputs keep numbers as strings; convert with Number() on submit. */
 const positiveAmount = z
@@ -102,12 +106,85 @@ export const csvRowSchema = z.object({
   account: z.string().optional().default(""),
 });
 
+// ---------- Persisted entity schemas (backup import) ----------
+
+export const accountEntitySchema = z.object({
+  id: entityId,
+  name: z.string().min(1),
+  type: z.enum(["checking", "savings", "credit", "cash", "other"]),
+  color: z.string().min(1),
+  startingBalance: z.number(),
+  balanceAdjustment: z.number().optional(),
+  archived: z.boolean(),
+});
+
+export const categoryEntitySchema = z.object({
+  id: entityId,
+  name: z.string().min(1),
+  icon: z.string().min(1),
+  color: z.string().min(1),
+  monthlyLimit: z.number().positive().optional(),
+});
+
+const transactionCommon = {
+  id: entityId,
+  accountId: entityId,
+  amount: z.number(),
+  date: isoDateBranded,
+  description: z.string(),
+  tags: z.array(z.string()).optional(),
+  recurringId: entityId.optional(),
+};
+
+export const transactionEntitySchema = z.discriminatedUnion("type", [
+  z.object({
+    ...transactionCommon,
+    type: z.literal("income"),
+    categoryId: entityId.nullable(),
+  }),
+  z.object({
+    ...transactionCommon,
+    type: z.literal("expense"),
+    categoryId: entityId.nullable(),
+  }),
+  z.object({
+    ...transactionCommon,
+    type: z.literal("transfer"),
+    categoryId: z.null(),
+    transferPairId: entityId,
+  }),
+]);
+
+export const recurringRuleEntitySchema = z.object({
+  id: entityId,
+  accountId: entityId,
+  categoryId: entityId,
+  amount: z.number(),
+  type: z.enum(["income", "expense"]),
+  description: z.string(),
+  frequency: z.enum(["weekly", "monthly", "yearly"]),
+  nextDueDate: isoDateBranded,
+  autoGenerate: z.boolean(),
+});
+
+export const goalEntitySchema = z.object({
+  id: entityId,
+  name: z.string().min(1),
+  targetAmount: z.number(),
+  currentAmount: z.number(),
+  deadline: isoDateBranded.optional(),
+  accountId: entityId.optional(),
+  createdAt: isoDateBranded,
+});
+
 export const backupSchema = z.object({
   version: z.literal(1),
   exportedAt: z.string(),
-  accounts: z.array(z.record(z.string(), z.unknown())),
-  categories: z.array(z.record(z.string(), z.unknown())),
-  transactions: z.array(z.record(z.string(), z.unknown())),
-  recurringRules: z.array(z.record(z.string(), z.unknown())),
-  goals: z.array(z.record(z.string(), z.unknown())),
+  accounts: z.array(accountEntitySchema),
+  categories: z.array(categoryEntitySchema),
+  transactions: z.array(transactionEntitySchema),
+  recurringRules: z.array(recurringRuleEntitySchema),
+  goals: z.array(goalEntitySchema),
 });
+
+export type ParsedBackup = z.infer<typeof backupSchema>;

@@ -16,9 +16,11 @@ export function AccountBalanceDisplay({
 }: {
   account: Account;
   balance: number;
-  className?: string;
-  creditMode?: CreditDisplayMode;
+  className?: string | undefined;
+  creditMode?: CreditDisplayMode | undefined;
 }) {
+  const currency = useCurrency();
+
   if (account.type !== "credit") {
     return (
       <CurrencyDisplay amount={balance} className={className} />
@@ -26,7 +28,6 @@ export function AccountBalanceDisplay({
   }
 
   const owed = creditAmountOwed(balance);
-  const currency = useCurrency();
   const liabilityClass = cn("text-expense tabular-nums", className);
 
   if (creditMode === "signed-negative") {

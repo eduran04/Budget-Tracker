@@ -1,0 +1,12 @@
+---
+description: Budget Tracker TypeScript conventions layered on ofershap best practices
+alwaysApply: true
+---
+
+- Domain types live in `src/types/index.ts`; Zod form/entity schemas live in `src/lib/schemas.ts`
+- Prefer Zod `.safeParse()` + type narrowing over `as` casts at UI and JSON boundaries
+- Dexie tables are typed via generics in `src/lib/db.ts` — keep the DB layer the single write path
+- shadcn/ui components in `src/components/ui/` are generated — do not refactor for TS purity unless fixing a real bug
+- Use branded `EntityId` / `IsoDate` for domain IDs and dates; widen only through validated parsers
+- Prefer `Result<T, E>` for recoverable errors (backup import) instead of throw-for-control-flow
+- Keep `as React.CSSProperties` in UI primitives when assigning CSS variables — acceptable escape hatch

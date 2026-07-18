@@ -8,11 +8,22 @@ export const CURRENCIES = [
   { code: "INR", label: "Indian Rupee (₹)" },
 ] as const;
 
-export function getCurrency(): string {
-  return localStorage.getItem("currency") ?? "USD";
+export type CurrencyCode = (typeof CURRENCIES)[number]["code"];
+
+const CURRENCY_CODES = new Set<string>(CURRENCIES.map((c) => c.code));
+
+export function isCurrencyCode(value: string): value is CurrencyCode {
+  return CURRENCY_CODES.has(value);
+}
+
+export function getCurrency(): CurrencyCode {
+  const stored = localStorage.getItem("currency");
+  if (stored && isCurrencyCode(stored)) return stored;
+  return "USD";
 }
 
 export function setCurrency(code: string) {
+  if (!isCurrencyCode(code)) return;
   localStorage.setItem("currency", code);
   window.dispatchEvent(new Event("currency-change"));
 }

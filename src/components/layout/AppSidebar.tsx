@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Heart, Wallet2 } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
+import logo from "@/assets/logo.png";
 import {
   Sidebar,
   SidebarContent,
@@ -23,9 +23,11 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-1.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground girly:rounded-2xl">
-            {girly ? <Heart className="size-4" /> : <Wallet2 className="size-4" />}
-          </div>
+          <img
+            src={logo}
+            alt="Budget Tracker"
+            className="size-8 shrink-0 rounded-lg object-cover girly:rounded-2xl"
+          />
           <span className="text-base font-semibold group-data-[collapsible=icon]:hidden">
             {girly ? "Budget ✨" : "Budget"}
           </span>

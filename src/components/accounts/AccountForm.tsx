@@ -30,7 +30,10 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { CATEGORY_COLORS } from "@/components/shared/icons";
+import {
+  CATEGORY_COLORS,
+  DEFAULT_ACCOUNT_COLOR,
+} from "@/components/shared/icons";
 import { cn } from "@/lib/utils";
 
 const ACCOUNT_TYPES = [
@@ -48,14 +51,14 @@ export function AccountForm({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  account?: Account;
+  account?: Account | undefined;
 }) {
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountSchema),
     defaultValues: {
       name: "",
       type: "checking",
-      color: CATEGORY_COLORS[1],
+      color: DEFAULT_ACCOUNT_COLOR,
       startingBalance: "0",
     },
   });
@@ -76,7 +79,7 @@ export function AccountForm({
           : {
               name: "",
               type: "checking",
-              color: CATEGORY_COLORS[1],
+              color: DEFAULT_ACCOUNT_COLOR,
               startingBalance: "0",
             },
       );

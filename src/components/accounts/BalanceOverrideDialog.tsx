@@ -36,7 +36,7 @@ export function BalanceOverrideDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  account?: Account;
+  account?: Account | undefined;
   transactions: Transaction[];
 }) {
   const form = useForm<BalanceOverrideFormValues>({

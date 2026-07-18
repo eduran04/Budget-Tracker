@@ -10,10 +10,10 @@ export function CurrencyDisplay({
 }: {
   amount: number;
   /** Tint green when positive, red when negative */
-  colored?: boolean;
+  colored?: boolean | undefined;
   /** Prefix positive values with + */
-  signed?: boolean;
-  className?: string;
+  signed?: boolean | undefined;
+  className?: string | undefined;
 }) {
   const currency = useCurrency();
   const text =

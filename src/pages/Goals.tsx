@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Goal } from "@/types";
+import { asEntityId, asIsoDate } from "@/types";
 import { useAccounts, useGoals } from "@/hooks/use-live-data";
 import {
   contributeToGoal,
@@ -125,18 +126,18 @@ export default function Goals() {
     const payload = {
       name: values.name,
       targetAmount: Number(values.targetAmount),
-      ...(values.deadline ? { deadline: values.deadline } : {}),
+      ...(values.deadline ? { deadline: asIsoDate(values.deadline) } : {}),
       ...(values.accountId && values.accountId !== NONE
-        ? { accountId: values.accountId }
+        ? { accountId: asEntityId(values.accountId) }
         : {}),
     };
     if (editing) {
       await updateGoal(editing.id, {
         ...payload,
-        deadline: values.deadline || undefined,
+        deadline: values.deadline ? asIsoDate(values.deadline) : undefined,
         accountId:
           values.accountId && values.accountId !== NONE
-            ? values.accountId
+            ? asEntityId(values.accountId)
             : undefined,
       });
       toast.success("Goal updated");
@@ -144,7 +145,7 @@ export default function Goals() {
       await createGoal({
         ...payload,
         currentAmount: 0,
-        createdAt: format(new Date(), "yyyy-MM-dd"),
+        createdAt: asIsoDate(format(new Date(), "yyyy-MM-dd")),
       });
       toast.success("Goal created");
     }
@@ -160,7 +161,9 @@ export default function Goals() {
     await contributeToGoal(
       contributing,
       amount,
-      contributionSource !== NONE ? contributionSource : undefined,
+      contributionSource !== NONE
+        ? asEntityId(contributionSource)
+        : undefined,
     );
     toast.success(`Added to ${contributing.name}`);
     setContributing(undefined);

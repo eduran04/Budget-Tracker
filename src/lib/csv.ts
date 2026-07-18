@@ -1,4 +1,5 @@
 import type { Account, Category, Transaction } from "@/types";
+import { asIsoDate } from "@/types";
 import { csvRowSchema } from "./schemas";
 
 function escapeCell(value: string): string {
@@ -82,10 +83,11 @@ export function csvToTransactions(
   categories: Category[],
 ): CsvImportResult {
   const rows = parseCsv(text);
-  if (rows.length < 2) {
+  const headerRow = rows[0];
+  if (!headerRow || rows.length < 2) {
     return { valid: [], errors: [{ line: 1, message: "File has no data rows" }] };
   }
-  const header = rows[0].map((h) => h.trim().toLowerCase());
+  const header = headerRow.map((h) => h.trim().toLowerCase());
   const idx = (name: string) => header.indexOf(name);
   if (idx("date") === -1 || idx("amount") === -1) {
     return {
@@ -105,6 +107,7 @@ export function csvToTransactions(
 
   for (let i = 1; i < rows.length; i++) {
     const cells = rows[i];
+    if (!cells) continue;
     const get = (name: string) => cells[idx(name)]?.trim() ?? "";
     const rawAmount = Number(get("amount"));
     const rawType = get("type").toLowerCase();
@@ -136,7 +139,7 @@ export function csvToTransactions(
       categoryId: category?.id ?? null,
       type: d.type,
       amount: Math.abs(d.amount),
-      date: d.date,
+      date: asIsoDate(d.date),
       description: d.description,
       ...(tagsCell
         ? { tags: tagsCell.split(";").map((t) => t.trim()).filter(Boolean) }

@@ -1,13 +1,22 @@
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 
-export type Theme = "light" | "dark" | "system" | "girly-pink";
+export const THEMES = ["light", "dark", "system", "girly-pink"] as const;
+export type Theme = (typeof THEMES)[number];
+
+export function isTheme(value: string): value is Theme {
+  return (THEMES as readonly string[]).includes(value);
+}
 
 function subscribe(cb: () => void) {
   window.addEventListener("theme-change", cb);
   return () => window.removeEventListener("theme-change", cb);
 }
 
-const getTheme = () => (localStorage.getItem("theme") ?? "system") as Theme;
+const getTheme = (): Theme => {
+  const stored = localStorage.getItem("theme");
+  if (stored && isTheme(stored)) return stored;
+  return "system";
+};
 
 function apply(theme: Theme) {
   const root = document.documentElement;

@@ -9,9 +9,9 @@ import {
   Upload,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useTheme, type Theme } from "@/hooks/use-theme";
+import { isTheme, useTheme } from "@/hooks/use-theme";
 import { useCurrency } from "@/hooks/use-currency";
-import { CURRENCIES, setCurrency } from "@/lib/currency";
+import { CURRENCIES, isCurrencyCode, setCurrency } from "@/lib/currency";
 import { clearAllData, exportAll, importAll } from "@/lib/db";
 import { backupSchema } from "@/lib/schemas";
 import type { AppBackup } from "@/types";
@@ -60,7 +60,7 @@ export default function Settings() {
         toast.error("Not a valid backup file");
         return;
       }
-      setPendingImport(parsed.data as unknown as AppBackup);
+      setPendingImport(parsed.data);
     } catch {
       toast.error("Could not read the file as JSON");
     }
@@ -80,7 +80,12 @@ export default function Settings() {
             <CardDescription>Theme preference is saved locally.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs value={theme} onValueChange={(v) => setTheme(v as Theme)}>
+            <Tabs
+              value={theme}
+              onValueChange={(v) => {
+                if (isTheme(v)) setTheme(v);
+              }}
+            >
               <TabsList>
                 <TabsTrigger value="light">
                   <Sun className="size-4" /> Light
@@ -113,6 +118,7 @@ export default function Settings() {
             <Select
               value={currency}
               onValueChange={(v) => {
+                if (!isCurrencyCode(v)) return;
                 setCurrency(v);
                 toast.success(`Currency set to ${v}`);
               }}
@@ -147,7 +153,7 @@ export default function Settings() {
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];
-                if (f) onImportFile(f);
+                if (f) void onImportFile(f);
                 e.target.value = "";
               }}
             />
@@ -206,12 +212,15 @@ export default function Settings() {
         }
         confirmLabel="Restore"
         onConfirm={async () => {
-          if (pendingImport) {
-            await importAll(pendingImport);
-            localStorage.setItem("seeded", "1");
-            setPendingImport(undefined);
-            toast.success("Backup restored");
+          if (!pendingImport) return;
+          const result = await importAll(pendingImport);
+          if (!result.success) {
+            toast.error(result.error);
+            return;
           }
+          localStorage.setItem("seeded", "1");
+          setPendingImport(undefined);
+          toast.success("Backup restored");
         }}
       />
     </>

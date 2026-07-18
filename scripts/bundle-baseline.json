@@ -1,0 +1,5 @@
+{
+  "comment": "Gzip bytes of startup-critical JS (entry + modulepreloaded chunks). Recorded 2026-07-16 after code splitting; pre-optimization single chunk was 349,993 bytes.",
+  "criticalGzipBytes": 185911,
+  "tolerance": 0.1
+}
